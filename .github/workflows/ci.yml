@@ -7,10 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -19,62 +16,32 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'latest'
+          flutter-version: '3.10.0'  # 替换为你需要的具体版本号
 
-      - name: Prepare dependencies
+      - name: Prepare Dependencies for Windows
         run: |
-          echo "Preparing dependencies..."
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            make windows-prepare || { echo "Windows prepare failed"; exit 1; }
-          elif [[ "$RUNNER_OS" == "Linux" ]]; then
-            make android-prepare || { echo "Android prepare failed"; exit 1; }
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            make windows-prepare
           fi
-          echo "Dependencies prepared."
 
-      - name: Run project
+      - name: Prepare Dependencies for Android
         run: |
-          echo "Running Flutter project..."
-          flutter run || { echo "Running project failed"; exit 1; }
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            make android-prepare
+          fi
+
+      - name: Run Flutter
+        run: flutter run
 
       - name: Build APK
-        if: runner.os == 'Linux'
-        run: |
-          echo "Building APK..."
-          flutter build apk || { echo "APK build failed"; exit 1; }
+        run: flutter build apk
 
       - name: Build Windows
-        if: runner.os == 'Windows'
-        run: |
-          echo "Building Windows application..."
-          flutter build windows || { echo "Windows build failed"; exit 1; }
+        run: flutter build windows
 
-      - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v3
+      - name: Upload Release
+        uses: ncipollo/release-action@v1
         with:
-          name: build-artifacts
-          path: |
-            build/windows/runner/Release/*
+          artifacts: |
             build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v1.0.0
-          release_name: Release v1.0.0
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Assets to Release
-        if: steps.create_release.outputs.id
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v1.0.0
-          assets: |
-            build/windows/runner/Release/*
-            build/app/outputs/flutter-apk/app-release.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+            build/windows/runner/Release/*.exe

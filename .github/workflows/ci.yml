@@ -19,7 +19,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.10.0'  # 请根据需要替换为具体版本
+          flutter-version: '3.7.2'  # 确保该版本支持 Dart SDK 3.4.0
 
       - name: Prepare dependencies
         run: |

@@ -18,6 +18,11 @@ jobs:
         with:
           flutter-version: '3.10.0'  # 替换为你需要的具体版本号
 
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
       - name: Prepare Dependencies for Windows
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then

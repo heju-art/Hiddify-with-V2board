@@ -47,7 +47,7 @@ jobs:
           echo "Windows build completed."
 
       - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
           path: |
@@ -75,3 +75,4 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

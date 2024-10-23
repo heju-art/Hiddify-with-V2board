@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest, ubuntu-latest]
 
     steps:
       - name: Checkout code
@@ -25,8 +25,6 @@ jobs:
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             make windows-prepare
-          elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            make macos-prepare
           elif [[ "$RUNNER_OS" == "Linux" ]]; then
             make android-prepare
           fi
@@ -36,31 +34,27 @@ jobs:
           echo "Running Flutter project..."
           flutter run || echo "Running project failed"
 
-      - name: Build project
+      - name: Build APK
+        if: runner.os == 'Linux'
         run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            flutter build windows
-            echo "Build for Windows completed."
-          elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            flutter build macos
-            echo "Build for macOS completed."
-          elif [[ "$RUNNER_OS" == "Linux" ]]; then
-            flutter build apk
-            echo "Build for Android completed."
-          fi
+          flutter build apk
+          echo "Android APK build completed."
+
+      - name: Build Windows
+        if: runner.os == 'Windows'
+        run: |
+          flutter build windows
+          echo "Windows build completed."
 
       - name: Upload Release Artifacts
-        if: success() && (matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest')
         uses: actions/upload-artifact@v2
         with:
           name: build-artifacts
           path: |
             build/windows/runner/Release/*
-            build/macos/Build/Products/Release/*
             build/app/outputs/flutter-apk/app-release.apk
 
       - name: Create GitHub Release
-        if: success() && (matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest')
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
@@ -78,7 +72,7 @@ jobs:
           tag_name: v1.0.0
           assets: |
             build/windows/runner/Release/*
-            build/macos/Build/Products/Release/*
             build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

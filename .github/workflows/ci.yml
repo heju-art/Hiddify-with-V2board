@@ -23,28 +23,30 @@ jobs:
 
       - name: Prepare dependencies
         run: |
+          echo "Preparing dependencies..."
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            make windows-prepare
+            make windows-prepare || { echo "Windows prepare failed"; exit 1; }
           elif [[ "$RUNNER_OS" == "Linux" ]]; then
-            make android-prepare
+            make android-prepare || { echo "Android prepare failed"; exit 1; }
           fi
+          echo "Dependencies prepared."
 
       - name: Run project
         run: |
           echo "Running Flutter project..."
-          flutter run || echo "Running project failed"
+          flutter run || { echo "Running project failed"; exit 1; }
 
       - name: Build APK
         if: runner.os == 'Linux'
         run: |
-          flutter build apk
-          echo "Android APK build completed."
+          echo "Building APK..."
+          flutter build apk || { echo "APK build failed"; exit 1; }
 
       - name: Build Windows
         if: runner.os == 'Windows'
         run: |
-          flutter build windows
-          echo "Windows build completed."
+          echo "Building Windows application..."
+          flutter build windows || { echo "Windows build failed"; exit 1; }
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v3

@@ -16,7 +16,15 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.10.0'  # 替换为你需要的具体版本号
+          flutter-version: '3.13.0'  # 确保使用包含 Dart >= 3.3.0 的版本
+
+      - name: Clean Flutter Cache
+        run: flutter clean
+
+      - name: Check Flutter and Dart Versions
+        run: |
+          flutter --version
+          dart --version
 
       - name: Install Dependencies
         run: |
@@ -26,13 +34,15 @@ jobs:
       - name: Prepare Dependencies for Windows
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
-            make windows-prepare
+            echo "Preparing dependencies for Windows..."
+            make windows-prepare || { echo "Failed to prepare Windows dependencies"; exit 1; }
           fi
 
       - name: Prepare Dependencies for Android
         run: |
           if [ "${{ runner.os }}" == "Linux" ]; then
-            make android-prepare
+            echo "Preparing dependencies for Android..."
+            make android-prepare || { echo "Failed to prepare Android dependencies"; exit 1; }
           fi
 
       - name: Run Flutter
@@ -50,3 +60,4 @@ jobs:
           artifacts: |
             build/app/outputs/flutter-apk/app-release.apk
             build/windows/runner/Release/*.exe
+

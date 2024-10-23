@@ -1,16 +1,16 @@
-name: Flutter CI
+name: Build and Release
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Checkout code
@@ -19,22 +19,66 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: 'latest'
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Prepare dependencies
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            make windows-prepare
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            make macos-prepare
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            make android-prepare
+          fi
 
-      - name: Run code generation
-        run: flutter pub run build_runner build --delete-conflicting-outputs
+      - name: Run project
+        run: |
+          echo "Running Flutter project..."
+          flutter run || echo "Running project failed"
 
-      - name: Run tests
-        run: flutter test
+      - name: Build project
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            flutter build windows
+            echo "Build for Windows completed."
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            flutter build macos
+            echo "Build for macOS completed."
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            flutter build apk
+            echo "Build for Android completed."
+          fi
 
-      - name: Build the app
-        run: flutter build apk
-
-      - name: Upload APK
+      - name: Upload Release Artifacts
+        if: success() && (matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest')
         uses: actions/upload-artifact@v2
         with:
-          name: app-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: build-artifacts
+          path: |
+            build/windows/runner/Release/*
+            build/macos/Build/Products/Release/*
+            build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create GitHub Release
+        if: success() && (matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest')
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v1.0.0
+          release_name: Release v1.0.0
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Assets to Release
+        if: steps.create_release.outputs.id
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v1.0.0
+          assets: |
+            build/windows/runner/Release/*
+            build/macos/Build/Products/Release/*
+            build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

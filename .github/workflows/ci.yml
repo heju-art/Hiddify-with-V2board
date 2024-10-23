@@ -19,7 +19,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'latest'
+          flutter-version: '3.10.0'  # 请根据需要替换为具体版本
 
       - name: Prepare dependencies
         run: |
@@ -43,4 +43,5 @@ jobs:
         with:
           artifacts: |
             build/app/outputs/flutter-apk/app-release.apk
-            build/windows/runner/Release/YourApp.exe
+            build/windows/runner/Release/YourApp.exe  # 请替换为实际可执行文件名
+

@@ -23,6 +23,8 @@ jobs:
 
       - name: Prepare dependencies
         run: |
+          flutter --disable-telemetry
+          set -x  # 启用调试输出
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             make windows-prepare
           elif [[ "${{ runner.os }}" == "Linux" ]]; then
@@ -44,4 +46,5 @@ jobs:
           artifacts: |
             build/app/outputs/flutter-apk/app-release.apk
             build/windows/runner/Release/YourApp.exe  # 请替换为实际可执行文件名
+
 

@@ -34,21 +34,17 @@ jobs:
           echo "Running Flutter project..."
           flutter run || echo "Running project failed"
 
-      - name: Build iOS
-        if: runner.os == 'macOS'
+      - name: Build APK
+        if: runner.os == 'Linux'
         run: |
-          echo "${{ secrets.P12_FILE_BASE64 }}" | base64 --decode > certificate.p12
-          flutter build ios --release --p12-filepath certificate.p12 --p12-password ${{ secrets.P12_PASSWORD }}
+          flutter build apk
+          echo "Android APK build completed."
 
-      - name: Build project
+      - name: Build Windows
+        if: runner.os == 'Windows'
         run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            flutter build windows
-            echo "Windows build completed."
-          elif [[ "$RUNNER_OS" == "Linux" ]]; then
-            flutter build apk
-            echo "Android build completed."
-          fi
+          flutter build windows
+          echo "Windows build completed."
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2

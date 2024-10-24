@@ -11,7 +11,7 @@ class DomainService {
   static Future<String> fetchValidDomain() async {
     try {
       final response = await http
-          .get(Uri.parse(https://oioiweb.top))
+          .get(Uri.parse(ossDomain))
           .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final List<dynamic> websites =

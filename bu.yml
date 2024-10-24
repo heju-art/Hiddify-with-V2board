@@ -1,46 +1,64 @@
-name: Build and Package
+name: Flutter CI/CD
 
 on:
   push:
     branches:
-      - main  # 触发工作流的分支
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # 在 Ubuntu 环境中运行
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.7.0'  # 指定 Flutter 版本
+          flutter-version: '3.4.0'  # 使用指定的Dart SDK版本
 
-      - name: Prepare dependencies for Android
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y make
-          make android-prepare
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            make windows-prepare
+          elif [ "$RUNNER_OS" == "Linux" ]; then
+            make linux-prepare
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            make macos-prepare
+          fi
 
-      - name: Prepare dependencies for Windows
+      - name: Run tests
+        run: flutter test
+
+      - name: Build application
         run: |
-          sudo apt-get update
-          sudo apt-get install -y make
-          make windows-prepare
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            flutter build apk
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            flutter build ios
+            flutter build macos
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            flutter build windows
+          fi
 
-      - name: Run Flutter project
-        run: flutter run
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v2
+        with:
+          name: flutter-artifacts
+          path: |
+            build/app/outputs/apk/  # Android APK
+            build/ios/iphoneos/*.ipa  # iOS IPA
+            build/macos/Build/Products/Release/  # macOS App
+            build/windows/runner/Release/*.exe  # Windows Executable
 
-      - name: Build APK for Android
-        run: flutter build apk
-
-      - name: Build for Windows
-        run: flutter build windows
-
-      - name: Output application
-        run: |
-          echo "Build complete. Check the build outputs."
 
 

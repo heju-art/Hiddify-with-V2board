@@ -1,54 +1,46 @@
-name: Build and Release
+name: Build and Package
 
 on:
   push:
     branches:
-      - main
+      - main  # 触发工作流的分支
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # 在 Ubuntu 环境中运行
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.13.0'  # 确保使用包含 Dart >= 3.3.0 的版本
+          flutter-version: '3.7.0'  # 指定 Flutter 版本
 
-      - name: Install Dependencies
+      - name: Prepare dependencies for Android
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential
+          sudo apt-get install -y make
+          make android-prepare
 
-      - name: Prepare Dependencies for Windows
+      - name: Prepare dependencies for Windows
         run: |
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            make windows-prepare
-          fi
+          sudo apt-get update
+          sudo apt-get install -y make
+          make windows-prepare
 
-      - name: Prepare Dependencies for Android
-        run: |
-          if [ "${{ runner.os }}" == "Linux" ]; then
-            make android-prepare
-          fi
-
-      - name: Run Flutter
+      - name: Run Flutter project
         run: flutter run
 
-      - name: Build APK
+      - name: Build APK for Android
         run: flutter build apk
 
-      - name: Build Windows
+      - name: Build for Windows
         run: flutter build windows
 
-      - name: Upload Release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/windows/runner/Release/*.exe
+      - name: Output application
+        run: |
+          echo "Build complete. Check the build outputs."
 
 

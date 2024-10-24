@@ -1,60 +1,63 @@
-name: Flutter CI
+name: Flutter CI/CD
 
 on:
   push:
     branches:
-      - main  # 或你要监控的分支
+      - main
   pull_request:
     branches:
       - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # 选择适合的操作系统
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2  # 使用 v2 版本
+        uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.4.0'  # 确保使用正确的版本
-          channel: 'stable'  # 指定稳定的渠道
+          flutter-version: 'stable'  # 使用稳定通道的Flutter版本
 
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            make windows-prepare
+          elif [ "$RUNNER_OS" == "Linux" ]; then
+            make linux-prepare
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            make macos-prepare
+          fi
 
-      - name: Prepare dependencies for Windows
-        if: runner.os == 'Windows'
-        run: make windows-prepare
+      - name: Run tests
+        run: flutter test
 
-      - name: Prepare dependencies for Android
-        if: runner.os == 'Linux'
-        run: make android-prepare
+      - name: Build application
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            flutter build apk
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            flutter build ios
+            flutter build macos
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            flutter build windows
+          fi
 
-      - name: Run Flutter project
-        run: flutter run --no-sound-null-safety  # 根据需要添加参数
-
-      - name: Build APK
-        run: flutter build apk --release
-
-      - name: Build Windows application
-        if: runner.os == 'Windows'
-        run: flutter build windows --release
-
-      - name: Upload APK Artifact
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v3
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v2
         with:
-          name: apk
-          path: build/app/outputs/flutter-apk/app-release.apk  # 根据实际路径调整
-
-      - name: Upload Windows Artifact
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v3
-        with:
-          name: windows
-          path: build/windows/runner/Release/YourApp.exe  # 根据实际路径调整
+          name: flutter-artifacts
+          path: |
+            build/app/outputs/apk/  # Android APK
+            build/ios/iphoneos/*.ipa  # iOS IPA
+            build/macos/Build/Products/Release/  # macOS App
+            build/windows/runner/Release/*.exe  # Windows Executable
 
 

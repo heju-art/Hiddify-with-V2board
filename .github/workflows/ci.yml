@@ -14,30 +14,34 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@v3  # 使用最新的 v3 版本
         with:
-          flutter-version: '3.4.0'  # 指定你的 Flutter 版本
+          flutter-version: '3.4.0'  # 确保使用正确的版本
+          channel: 'stable'  # 指定稳定的渠道
+
+      - name: Install dependencies
+        run: flutter pub get
 
       - name: Prepare dependencies for Windows
         if: runner.os == 'Windows'
         run: make windows-prepare
 
       - name: Prepare dependencies for Android
-        if: runner.os == 'Linux'  # 根据你的需要
+        if: runner.os == 'Linux'
         run: make android-prepare
 
       - name: Run Flutter project
-        run: flutter run
+        run: flutter run --no-sound-null-safety  # 根据需要添加参数
 
       - name: Build APK
-        run: flutter build apk
+        run: flutter build apk --release
 
       - name: Build Windows application
         if: runner.os == 'Windows'
-        run: flutter build windows
+        run: flutter build windows --release
 
       - name: Upload APK Artifact
         if: runner.os == 'Linux'
@@ -52,3 +56,4 @@ jobs:
         with:
           name: windows
           path: build/windows/runner/Release/YourApp.exe  # 根据实际路径调整
+

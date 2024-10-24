@@ -1,16 +1,16 @@
-name: Build and Release
+name: Flutter CI
 
 on:
   push:
+    branches:
+      - main  # 或你要监控的分支
+  pull_request:
     branches:
       - main
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ubuntu-latest  # 选择适合的操作系统
 
     steps:
       - name: Checkout repository
@@ -19,32 +19,39 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.7.2'  # 确保该版本支持 Dart SDK 3.4.0
+          flutter-version: '3.4.0'  # 指定你的 Flutter 版本
 
-      - name: Prepare dependencies
-        run: |
-          flutter --disable-telemetry
-          set -x  # 启用调试输出
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            make windows-prepare
-          elif [[ "${{ runner.os }}" == "Linux" ]]; then
-            make android-prepare
-          fi
+      - name: Prepare dependencies for Windows
+        if: runner.os == 'Windows'
+        run: make windows-prepare
 
-      - name: Run Flutter
+      - name: Prepare dependencies for Android
+        if: runner.os == 'Linux'  # 根据你的需要
+        run: make android-prepare
+
+      - name: Run Flutter project
         run: flutter run
 
       - name: Build APK
         run: flutter build apk
 
-      - name: Build Windows
+      - name: Build Windows application
+        if: runner.os == 'Windows'
         run: flutter build windows
 
-      - name: Upload Release
-        uses: ncipollo/release-action@v1
+      - name: Upload APK Artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v2
         with:
-          artifacts: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/windows/runner/Release/YourApp.exe  # 请替换为实际可执行文件名
+          name: apk
+          path: build/app/outputs/flutter-apk/app-release.apk  # 根据实际路径调整
+
+      - name: Upload Windows Artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows
+          path: build/windows/runner/Release/YourApp.exe  # 根据实际路径调整
+
 
 

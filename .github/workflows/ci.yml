@@ -41,17 +41,14 @@ jobs:
 
       - name: Upload APK Artifact
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: apk
           path: build/app/outputs/flutter-apk/app-release.apk  # 根据实际路径调整
 
       - name: Upload Windows Artifact
         if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: windows
           path: build/windows/runner/Release/YourApp.exe  # 根据实际路径调整
-
-
-

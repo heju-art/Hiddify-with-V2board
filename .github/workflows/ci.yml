@@ -1,4 +1,4 @@
-name: Flutter CI/CD
+name: Flutter CI
 
 on:
   push:
@@ -10,54 +10,53 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Flutter
+      - name: Set up Dart SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable'  # 使用稳定通道的Flutter版本
+          flutter-version: '3.4.0'
 
       - name: Install dependencies
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            make windows-prepare
-          elif [ "$RUNNER_OS" == "Linux" ]; then
-            make linux-prepare
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            make macos-prepare
-          fi
+          case $RUNNER_OS in
+            'Linux')
+              make linux-prepare
+              ;;
+            'Windows')
+              make windows-prepare
+              ;;
+            'macOS')
+              make macos-prepare
+              ;;
+            *)
+              echo "Unsupported OS"
+              exit 1
+              ;;
+          esac
 
-      - name: Run tests
+      - name: Run Flutter tests
         run: flutter test
 
-      - name: Build application
+      - name: Build APK
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            flutter build apk
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            flutter build ios
-            flutter build macos
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-            flutter build windows
-          fi
+          flutter build apk
 
-      - name: Upload artifacts
-        if: success()
-        uses: actions/upload-artifact@v2
-        with:
-          name: flutter-artifacts
-          path: |
-            build/app/outputs/apk/  # Android APK
-            build/ios/iphoneos/*.ipa  # iOS IPA
-            build/macos/Build/Products/Release/  # macOS App
-            build/windows/runner/Release/*.exe  # Windows Executable
+      - name: Build iOS app
+        run: |
+          flutter build ios
+
+      - name: Build macOS app
+        run: |
+          flutter build macos
+
+      - name: Build Windows app
+        run: |
+          flutter build windows
+
 
 
